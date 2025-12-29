@@ -79,11 +79,12 @@ export function Products() {
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <h1 className="text-2xl font-bold">Products</h1>
-                <button onClick={() => openModal()} className="btn btn-primary">
+                <button onClick={() => openModal()} className="btn btn-primary w-full sm:w-auto">
                     <Plus className="h-5 w-5 mr-2" />
-                    Add Product
+                    <span className="hidden sm:inline">Add Product</span>
+                    <span className="sm:hidden">Add</span>
                 </button>
             </div>
 
@@ -116,7 +117,7 @@ export function Products() {
                         </div>
 
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className="label">Name (FR)</label>
                                     <input {...register('name_fr')} className="input" required />
@@ -127,7 +128,7 @@ export function Products() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className="label">Price</label>
                                     <input type="number" {...register('price')} className="input" required />
@@ -148,7 +149,7 @@ export function Products() {
                                 </select>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className="label">Description (FR)</label>
                                     <textarea {...register('description_fr')} className="input" rows={3} />

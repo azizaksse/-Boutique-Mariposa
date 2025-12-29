@@ -40,7 +40,7 @@ export function Home() {
             {/* Hero Section */}
             {/* Hero Section */}
             <section className="pt-24 pb-8 px-4 sm:px-6 lg:px-8">
-                <div className="mx-auto max-w-[1400px] relative h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl">
+                <div className="mx-auto max-w-[1400px] relative h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl bg-secondary-900">
                     {/* Video Background */}
                     <div className="absolute inset-0 w-full h-full">
                         <video
@@ -49,7 +49,12 @@ export function Home() {
                             loop
                             muted
                             playsInline
+                            preload="metadata"
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                                console.error('Video failed to load');
+                                e.currentTarget.style.display = 'none';
+                            }}
                         >
                             <source src="/vedio bg.mp4" type="video/mp4" />
                         </video>

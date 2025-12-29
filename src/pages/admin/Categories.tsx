@@ -63,11 +63,12 @@ export function Categories() {
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <h1 className="text-2xl font-bold">Categories</h1>
-                <button onClick={() => openModal()} className="btn btn-primary">
+                <button onClick={() => openModal()} className="btn btn-primary w-full sm:w-auto">
                     <Plus className="h-5 w-5 mr-2" />
-                    Add Category
+                    <span className="hidden sm:inline">Add Category</span>
+                    <span className="sm:hidden">Add</span>
                 </button>
             </div>
 
@@ -92,7 +93,7 @@ export function Categories() {
 
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="bg-white rounded-2xl w-full max-w-md p-6">
+                    <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6">
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-xl font-bold">{editingCategory ? 'Edit Category' : 'Add Category'}</h2>
                             <button onClick={() => setIsModalOpen(false)}><X className="h-6 w-6" /></button>
