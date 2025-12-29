@@ -27,13 +27,18 @@ export function ImageUpload({ value = [], onChange, bucket, multiple = false }: 
                 const fileName = `${Math.random()}.${fileExt}`;
                 const filePath = `${fileName}`;
 
-                const { error: uploadError } = await supabase.storage
+                console.log(`Uploading file to bucket: ${bucket}, path: ${filePath}`);
+
+                const { error: uploadError, data: uploadData } = await supabase.storage
                     .from(bucket)
                     .upload(filePath, file);
 
                 if (uploadError) {
+                    console.error('Upload error details:', uploadError);
                     throw uploadError;
                 }
+
+                console.log('Upload successful:', uploadData);
 
                 const { data } = supabase.storage
                     .from(bucket)
@@ -43,9 +48,19 @@ export function ImageUpload({ value = [], onChange, bucket, multiple = false }: 
             }
 
             onChange(multiple ? [...value, ...newUrls] : newUrls);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error uploading image:', error);
-            alert('Error uploading image');
+
+            // Show detailed error message
+            let errorMessage = 'Error uploading image';
+            if (error?.message) {
+                errorMessage += `: ${error.message}`;
+            }
+            if (error?.statusCode) {
+                errorMessage += ` (Status: ${error.statusCode})`;
+            }
+
+            alert(errorMessage);
         } finally {
             setUploading(false);
         }
