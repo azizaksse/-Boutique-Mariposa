@@ -50,27 +50,42 @@ export function Products() {
     };
 
     const onSubmit = async (data: any) => {
-        const imageUrls = editingProduct?.images || [];
-
+        const price = data.price === '' || data.price == null ? null : Number(data.price);
+        const oldPrice = data.old_price === '' || data.old_price == null ? null : Number(data.old_price);
+        const stock = data.stock === '' || data.stock == null ? 0 : Number(data.stock);
         const productData = {
             ...data,
-            slug: data.name_fr.toLowerCase().replace(/ /g, '-'),
-            images: imageUrls.length > 0 ? imageUrls : [],
+            slug: data.name_fr?.toLowerCase().trim().replace(/\s+/g, '-'),
+            price,
+            old_price: oldPrice,
+            images: editingProduct?.images || [],
+            stock,
+            featured: !!data.featured
         };
 
-        if (editingProduct?.id) {
-            await supabase.from('products').update(productData).eq('id', editingProduct.id);
-        } else {
-            await supabase.from('products').insert([productData]);
+        const response = editingProduct?.id
+            ? await supabase.from('products').update(productData).eq('id', editingProduct.id)
+            : await supabase.from('products').insert([productData]);
+
+        if (response.error) {
+            console.error(response.error);
+            alert(response.error.message || 'Failed to save product.');
+            return;
         }
 
         setIsModalOpen(false);
+        setEditingProduct(null);
         fetchData();
     };
 
     const deleteProduct = async (id: string) => {
         if (confirm('Are you sure?')) {
-            await supabase.from('products').delete().eq('id', id);
+            const { error } = await supabase.from('products').delete().eq('id', id);
+            if (error) {
+                console.error(error);
+                alert(error.message || 'Failed to delete product.');
+                return;
+            }
             fetchData();
         }
     };
