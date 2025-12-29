@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Truck, ShieldCheck, Phone } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
-import { PRODUCTS, CATEGORIES } from '../data/mockData';
+import { supabase } from '../lib/supabase';
 import { Product, Category } from '../types';
 import { cn, formatPrice } from '../lib/utils';
 
@@ -14,12 +14,17 @@ export function Home() {
     const videoRef = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
-        // Simulate loading
-        setTimeout(() => {
-            setFeaturedProducts(PRODUCTS.filter(p => p.featured).slice(0, 4));
-            setCategories(CATEGORIES.slice(0, 4));
+        async function loadData() {
+            const [prodRes, catRes] = await Promise.all([
+                supabase.from('products').select('*').eq('featured', true).limit(4),
+                supabase.from('categories').select('*').limit(4)
+            ]);
+
+            if (prodRes.data) setFeaturedProducts(prodRes.data);
+            if (catRes.data) setCategories(catRes.data);
             setLoading(false);
-        }, 500);
+        }
+        loadData();
     }, []);
 
     useEffect(() => {

@@ -5,8 +5,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useI18n } from '../lib/i18n';
-// import { supabase } from '../lib/supabase';
-import { PRODUCTS } from '../data/mockData';
+import { supabase } from '../lib/supabase';
+// import { PRODUCTS } from '../data/mockData';
 import { Product } from '../types';
 import { wilayas } from '../lib/wilayas';
 import { cn, formatPrice } from '../lib/utils';
@@ -55,15 +55,15 @@ export function ProductDetails() {
     useEffect(() => {
         if (!id) return;
 
-        // Simulate loading
-        setTimeout(() => {
-            const foundProduct = PRODUCTS.find(p => p.id === id);
-            if (foundProduct) {
-                setProduct(foundProduct);
-                trackViewContent(foundProduct);
+        async function loadProduct() {
+            const { data } = await supabase.from('products').select('*').eq('id', id).single();
+            if (data) {
+                setProduct(data);
+                trackViewContent(data);
             }
             setLoading(false);
-        }, 500);
+        }
+        loadProduct();
     }, [id]);
 
     const onSubmit = async (data: FormData) => {
@@ -89,16 +89,8 @@ export function ProductDetails() {
             }],
         };
 
-        // Simulate API call for mock data
-        setTimeout(() => {
-            setSuccess(true);
-            trackLead(orderData);
-            setSubmitting(false);
-        }, 1000);
-
-        // Uncomment for real Supabase integration
-        /*
         const { error } = await supabase.from('orders').insert([orderData]);
+
         if (error) {
             console.error(error);
             alert('Error submitting order');
@@ -107,19 +99,32 @@ export function ProductDetails() {
             setSuccess(true);
             trackLead(orderData);
             setSubmitting(false);
+
+            // Format WhatsApp Message
+            const msg = `*New Order!* 🛍️%0A%0A` +
+                `*Product:* ${language === 'ar' ? product.name_ar : product.name_fr}%0A` +
+                `*Price:* ${formatPrice(product.price)}%0A` +
+                `*Quantity:* ${data.quantity}%0A` +
+                `*Total:* ${formatPrice(total)}%0A` +
+                `------------------%0A` +
+                `*Name:* ${data.fullName}%0A` +
+                `*Phone:* ${data.phone}%0A` +
+                `*Address:* ${data.address}%0A` +
+                `*City:* ${data.commune}, ${selectedWilaya?.name_fr || data.wilaya}%0A` +
+                `*Delivery:* ${data.deliveryMethod === 'home' ? 'Domicile' : 'Stopdesk'}`;
+
+            // Redirect to WhatsApp
+            window.open(`https://wa.me/213658688543?text=${msg}`, '_blank');
         }
-        */
     };
 
     if (loading) return <div className="p-12 text-center">Loading...</div>;
     if (!product) return <div className="p-12 text-center">Product not found</div>;
 
-    const whatsappMessage = encodeURIComponent(
-        `Hello, I want to order: ${language === 'ar' ? product.name_ar : product.name_fr} - ${product.price} DA`
-    );
+
 
     return (
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 pt-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 pt-24" >
             <Link to="/categories" className="inline-flex items-center text-sm text-secondary-500 hover:text-primary-600 mb-6">
                 <ChevronLeft className="h-4 w-4 mr-1" />
                 {t('nav.categories')}
@@ -284,27 +289,16 @@ export function ProductDetails() {
                                         </div>
                                     </div>
 
-                                    <button type="submit" disabled={submitting} className="btn btn-primary w-full py-4 text-lg shadow-lg shadow-primary-500/20 hover:shadow-primary-500/40 transform hover:-translate-y-1 transition-all duration-300">
-                                        {submitting ? 'Traitement...' : t('product.order')}
+                                    <button type="submit" disabled={submitting} className="btn btn-primary w-full py-4 text-lg shadow-lg shadow-primary-500/20 hover:shadow-primary-500/40 transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#128C7E] border-none">
+                                        <MessageCircle className="h-6 w-6" />
+                                        {submitting ? 'Traitement...' : t('product.order_whatsapp')}
                                     </button>
                                 </form>
-
-                                <div className="mt-4 pt-4 border-t border-secondary-100">
-                                    <a
-                                        href={`https://wa.me/213658688543?text=${whatsappMessage}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="btn btn-secondary w-full py-3 text-green-600 border-green-200 hover:bg-green-50 hover:border-green-300 flex items-center justify-center gap-2"
-                                    >
-                                        <MessageCircle className="h-5 w-5" />
-                                        {t('product.order_whatsapp')}
-                                    </a>
-                                </div>
                             </div>
                         )}
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

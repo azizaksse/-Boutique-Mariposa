@@ -1,34 +1,32 @@
-import { useEffect, useState } from 'react';
-import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, ShoppingCart, LogOut, Grid } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { Outlet, Link, useLocation } from 'react-router-dom';
+import { LayoutDashboard, Package, ShoppingCart, Grid } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export function AdminLayout() {
-    const [session, setSession] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+    // const [session, setSession] = useState<any>(null);
+    // const [loading, setLoading] = useState(true);
     const location = useLocation();
 
-    useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-            setLoading(false);
-        });
+    // useEffect(() => {
+    //     supabase.auth.getSession().then(({ data: { session } }) => {
+    //         setSession(session);
+    //         setLoading(false);
+    //     });
 
-        const {
-            data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session);
-        });
+    //     const {
+    //         data: { subscription },
+    //     } = supabase.auth.onAuthStateChange((_event, session) => {
+    //         setSession(session);
+    //     });
 
-        return () => subscription.unsubscribe();
-    }, []);
+    //     return () => subscription.unsubscribe();
+    // }, []);
 
-    if (loading) return <div>Loading...</div>;
-
-    if (!session) {
-        return <Navigate to="/admin/login" replace />;
-    }
+    // Authentication check removed as per request
+    // if (loading) return <div>Loading...</div>;
+    // if (!session) {
+    //     return <Navigate to="/admin/login" replace />;
+    // }
 
     const links = [
         { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -60,13 +58,13 @@ export function AdminLayout() {
                             {link.label}
                         </Link>
                     ))}
-                    <button
+                    {/* <button
                         onClick={() => supabase.auth.signOut()}
                         className="flex w-full items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50"
                     >
                         <LogOut className="h-5 w-5" />
                         Sign Out
-                    </button>
+                    </button> */}
                 </nav>
             </aside>
 

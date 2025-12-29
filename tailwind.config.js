@@ -44,9 +44,12 @@ export default {
                 }
             },
             fontFamily: {
-                sans: ['Inter', 'sans-serif'],
+                sans: ['Urbanist', 'sans-serif'],
                 serif: ['Playfair Display', 'serif'],
                 arabic: ['Tajawal', 'sans-serif'],
+                modern: ['Outfit', 'sans-serif'],
+                girly: ['Fredoka', 'sans-serif'],
+                signore: ['Italiana', 'serif'],
             },
             animation: {
                 'fade-in': 'fadeIn 0.5s ease-out',
@@ -60,6 +63,9 @@ export default {
                 slideUp: {
                     '0%': { transform: 'translateY(20px)', opacity: '0' },
                     '100%': { transform: 'translateY(0)', opacity: '1' },
+                },
+                shimmer: {
+                    '100%': { transform: 'translateX(100%)' },
                 }
             }
         },

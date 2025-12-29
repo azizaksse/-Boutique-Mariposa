@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useI18n } from '../lib/i18n';
-import { PRODUCTS, CATEGORIES } from '../data/mockData';
+import { supabase } from '../lib/supabase';
 import { Category, Product } from '../types';
 import { cn, formatPrice } from '../lib/utils';
 
@@ -15,22 +15,32 @@ export function Categories() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        setLoading(true);
-        // Simulate loading
-        setTimeout(() => {
-            setCategories(CATEGORIES);
+        async function loadData() {
+            setLoading(true);
 
-            let filteredProducts = PRODUCTS;
+            // Fetch Categories
+            const { data: cats } = await supabase.from('categories').select('*');
+            if (cats) setCategories(cats);
+
+            // Fetch Products
+            let query = supabase.from('products').select('*');
             if (categoryId) {
-                filteredProducts = PRODUCTS.filter(p => p.category_id === categoryId);
+                query = query.eq('category_id', categoryId);
             }
-            setProducts(filteredProducts);
+
+            // const { data: prods } = await supabase.from('products').select('*'); // Fetch all first then filter client side if needed or use query builder correctly
+            // Actually better to use the query builder directly
+
+            const { data: filteredProds } = await query;
+            if (filteredProds) setProducts(filteredProds);
+
             setLoading(false);
-        }, 500);
+        }
+        loadData();
     }, [categoryId]);
 
     return (
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-24 pb-12">
             {/* Categories Bar */}
             <div className="flex overflow-x-auto gap-3 pb-8 no-scrollbar mask-linear-fade">
                 <Link

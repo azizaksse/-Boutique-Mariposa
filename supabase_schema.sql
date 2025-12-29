@@ -68,27 +68,27 @@ on conflict (id) do nothing;
 -- Categories
 alter table categories enable row level security;
 create policy "Public categories are viewable by everyone" on categories for select using (true);
-create policy "Admins can insert categories" on categories for insert with check (auth.role() = 'authenticated');
-create policy "Admins can update categories" on categories for update using (auth.role() = 'authenticated');
-create policy "Admins can delete categories" on categories for delete using (auth.role() = 'authenticated');
+create policy "Public can insert categories" on categories for insert with check (true);
+create policy "Public can update categories" on categories for update using (true);
+create policy "Public can delete categories" on categories for delete using (true);
 
 -- Products
 alter table products enable row level security;
 create policy "Public products are viewable by everyone" on products for select using (true);
-create policy "Admins can insert products" on products for insert with check (auth.role() = 'authenticated');
-create policy "Admins can update products" on products for update using (auth.role() = 'authenticated');
-create policy "Admins can delete products" on products for delete using (auth.role() = 'authenticated');
+create policy "Public can insert products" on products for insert with check (true);
+create policy "Public can update products" on products for update using (true);
+create policy "Public can delete products" on products for delete using (true);
 
 -- Orders
 alter table orders enable row level security;
 create policy "Public can create orders" on orders for insert with check (true);
-create policy "Admins can view all orders" on orders for select using (auth.role() = 'authenticated');
-create policy "Admins can update orders" on orders for update using (auth.role() = 'authenticated');
+create policy "Public can view all orders" on orders for select using (true);
+create policy "Public can update orders" on orders for update using (true);
 
 -- Messages
 alter table messages enable row level security;
 create policy "Public can create messages" on messages for insert with check (true);
-create policy "Admins can view messages" on messages for select using (auth.role() = 'authenticated');
+create policy "Public can view messages" on messages for select using (true);
 
 -- Seed Data
 insert into categories (name_fr, name_ar, slug) values
