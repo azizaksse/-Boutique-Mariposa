@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
 import { LayoutDashboard, Package, ShoppingCart, Grid } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -22,11 +22,10 @@ export function AdminLayout() {
     //     return () => subscription.unsubscribe();
     // }, []);
 
-    // Authentication check removed as per request
-    // if (loading) return <div>Loading...</div>;
-    // if (!session) {
-    //     return <Navigate to="/admin/login" replace />;
-    // }
+    const isAuthed = localStorage.getItem('admin_auth') === 'true';
+    if (!isAuthed) {
+        return <Navigate to="/admin/login" replace />;
+    }
 
     const links = [
         { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },

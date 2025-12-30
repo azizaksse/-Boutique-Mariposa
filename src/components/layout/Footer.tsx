@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useI18n } from '../../lib/i18n';
 import { cn } from '../../lib/utils';
 import { Heart, Facebook, Phone, Mail } from 'lucide-react';
@@ -78,6 +79,11 @@ export function Footer() {
                     <p className="flex items-center justify-center gap-1 text-sm text-secondary-500">
                         Made with <Heart className="h-4 w-4 fill-primary-500 text-primary-500" /> in Algeria
                     </p>
+                    <div className="mt-4">
+                        <Link to="/admin/login" className="text-xs font-semibold uppercase tracking-wider text-secondary-400 hover:text-primary-600 transition-colors">
+                            Administration
+                        </Link>
+                    </div>
                 </div>
             </div>
         </footer>

@@ -12,6 +12,8 @@ export function Products() {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+    const [mainImage, setMainImage] = useState<string | null>(null);
+    const [galleryImages, setGalleryImages] = useState<string[]>([]);
 
     const { register, handleSubmit, reset, setValue } = useForm();
 
@@ -33,33 +35,35 @@ export function Products() {
     const openModal = (product?: Product) => {
         if (product) {
             setEditingProduct(product);
-            setValue('name_fr', product.name_fr);
-            setValue('name_ar', product.name_ar);
+            setValue('name', product.name_fr);
             setValue('price', product.price);
             setValue('old_price', product.old_price);
-            setValue('description_fr', product.description_fr);
-            setValue('description_ar', product.description_ar);
             setValue('category_id', product.category_id);
-            setValue('stock', product.stock);
+            setMainImage(product.images?.[0] || null);
+            setGalleryImages(product.images?.slice(1) || []);
             setValue('featured', product.featured);
         } else {
-            setEditingProduct({ images: [] } as any);
+            setEditingProduct(null);
+            setMainImage(null);
+            setGalleryImages([]);
             reset();
         }
         setIsModalOpen(true);
     };
 
     const onSubmit = async (data: any) => {
+        const name = String(data.name || '').trim();
         const price = data.price === '' || data.price == null ? null : Number(data.price);
         const oldPrice = data.old_price === '' || data.old_price == null ? null : Number(data.old_price);
-        const stock = data.stock === '' || data.stock == null ? 0 : Number(data.stock);
+        const images = [mainImage, ...galleryImages].filter(Boolean) as string[];
         const productData = {
-            ...data,
-            slug: data.name_fr?.toLowerCase().trim().replace(/\s+/g, '-'),
+            name_fr: name,
+            name_ar: name,
+            category_id: data.category_id,
+            slug: name.toLowerCase().replace(/\s+/g, '-'),
             price,
             old_price: oldPrice,
-            images: editingProduct?.images || [],
-            stock,
+            images,
             featured: !!data.featured
         };
 
@@ -134,16 +138,9 @@ export function Products() {
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="label">Name (FR)</label>
-                                    <input {...register('name_fr')} className="input" required />
+                                    <label className="label">Name</label>
+                                    <input {...register('name')} className="input" required />
                                 </div>
-                                <div>
-                                    <label className="label">Name (AR)</label>
-                                    <input {...register('name_ar')} className="input" dir="rtl" required />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className="label">Price</label>
                                     <input type="number" {...register('price')} className="input" required />
@@ -164,24 +161,20 @@ export function Products() {
                                 </select>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="label">Description (FR)</label>
-                                    <textarea {...register('description_fr')} className="input" rows={3} />
-                                </div>
-                                <div>
-                                    <label className="label">Description (AR)</label>
-                                    <textarea {...register('description_ar')} className="input" rows={3} dir="rtl" />
-                                </div>
+                            <div>
+                                <label className="label">Principal Image</label>
+                                <ImageUpload
+                                    value={mainImage ? [mainImage] : []}
+                                    onChange={(urls) => setMainImage(urls[0] || null)}
+                                    bucket="products"
+                                />
                             </div>
 
                             <div>
-                                <label className="label">Images</label>
+                                <label className="label">Gallery Images</label>
                                 <ImageUpload
-                                    value={editingProduct?.images || []}
-                                    onChange={(urls) => {
-                                        setEditingProduct(prev => prev ? { ...prev, images: urls } : { ...{} as Product, images: urls });
-                                    }}
+                                    value={galleryImages}
+                                    onChange={setGalleryImages}
                                     bucket="products"
                                     multiple
                                 />
@@ -189,7 +182,7 @@ export function Products() {
 
                             <div className="flex items-center gap-2">
                                 <input type="checkbox" {...register('featured')} id="featured" />
-                                <label htmlFor="featured" className="text-sm font-medium">Featured Product</label>
+                                <label htmlFor="featured" className="text-sm font-medium">Show on home page</label>
                             </div>
 
                             <button type="submit" className="btn btn-primary w-full">Save Product</button>

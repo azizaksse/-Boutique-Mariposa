@@ -66,6 +66,14 @@ export function ProductDetails() {
         loadProduct();
     }, [id]);
 
+    useEffect(() => {
+        if (!product?.images?.length) return;
+        product.images.forEach((src) => {
+            const img = new Image();
+            img.src = src;
+        });
+    }, [product]);
+
     const onSubmit = async (data: FormData) => {
         if (!product) return;
         setSubmitting(true);
@@ -133,12 +141,23 @@ export function ProductDetails() {
             <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
                 {/* Images - Takes up 7 columns on large screens */}
                 <div className="lg:col-span-7 flex flex-col gap-6">
-                    <div className="aspect-square overflow-hidden rounded-3xl bg-white shadow-lg border border-secondary-100 relative group">
+                    <div>
+                        <h1 className={cn("text-3xl font-bold text-secondary-900 mb-4", language === 'ar' && "font-arabic")}>
+                            {language === 'ar' ? product.name_ar : product.name_fr}
+                        </h1>
+                        <div className={cn("prose prose-lg text-secondary-600 leading-relaxed", language === 'ar' && "font-arabic")}>
+                            <p>{language === 'ar' ? product.description_ar : product.description_fr}</p>
+                        </div>
+                    </div>
+                    <div className="aspect-[4/3] max-h-[520px] overflow-hidden rounded-3xl bg-white shadow-lg border border-secondary-100 relative group">
                         {product.images?.[selectedImage] && (
                             <img
                                 src={product.images[selectedImage]}
                                 alt={product.name_fr}
                                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                loading="eager"
+                                decoding="async"
+                                fetchPriority="high"
                             />
                         )}
                     </div>
@@ -148,23 +167,13 @@ export function ProductDetails() {
                                 key={idx}
                                 onClick={() => setSelectedImage(idx)}
                                 className={cn(
-                                    "relative h-24 w-24 flex-none overflow-hidden rounded-xl border-2 transition-all duration-200",
+                                    "relative h-20 w-20 flex-none overflow-hidden rounded-xl border-2 transition-all duration-200",
                                     selectedImage === idx ? "border-primary-600 ring-2 ring-primary-100" : "border-transparent opacity-70 hover:opacity-100"
                                 )}
                             >
-                                <img src={img} alt="" className="h-full w-full object-cover" />
+                                <img src={img} alt="" className="h-full w-full object-cover" loading="eager" decoding="async" />
                             </button>
                         ))}
-                    </div>
-
-                    {/* Description moved here for better layout balance */}
-                    <div className="mt-8">
-                        <h1 className={cn("text-3xl font-bold text-secondary-900 mb-4", language === 'ar' && "font-arabic")}>
-                            {language === 'ar' ? product.name_ar : product.name_fr}
-                        </h1>
-                        <div className={cn("prose prose-lg text-secondary-600 leading-relaxed", language === 'ar' && "font-arabic")}>
-                            <p>{language === 'ar' ? product.description_ar : product.description_fr}</p>
-                        </div>
                     </div>
                 </div>
 
