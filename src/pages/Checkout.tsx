@@ -1,15 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useI18n } from '../lib/i18n';
-import { supabase } from '../lib/supabase';
-import { Product } from '../types';
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { Id } from "../../convex/_generated/dataModel";
 import { wilayas } from '../lib/wilayas';
 import { cn, formatPrice } from '../lib/utils';
 import { CheckCircle } from 'lucide-react';
 import { trackLead } from '../lib/pixel';
+import { LocationSelector } from '../components/LocationSelector';
 
 const schema = z.object({
     fullName: z.string().min(3, 'Name is too short'),
@@ -26,9 +28,12 @@ type FormData = z.infer<typeof schema>;
 
 export function Checkout() {
     const { id } = useParams();
+    const productId = id as Id<"products">;
     const { t, language } = useI18n();
-    const [product, setProduct] = useState<Product | null>(null);
-    const [loading, setLoading] = useState(true);
+
+    const product = useQuery(api.products.get, { id: productId });
+    const createOrder = useMutation(api.orders.create);
+
     const [submitting, setSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
 
@@ -51,21 +56,6 @@ export function Checkout() {
 
     const total = product ? (product.price * quantity) + deliveryFee : 0;
 
-    useEffect(() => {
-        async function fetchProduct() {
-            if (!id) return;
-            const { data } = await supabase
-                .from('products')
-                .select('*')
-                .eq('id', id)
-                .single();
-
-            if (data) setProduct(data);
-            setLoading(false);
-        }
-        fetchProduct();
-    }, [id]);
-
     const onSubmit = async (data: FormData) => {
         if (!product) return;
         setSubmitting(true);
@@ -81,29 +71,28 @@ export function Checkout() {
             total: total,
             status: 'new',
             items: [{
-                product_id: product.id,
+                product_id: product._id,
                 quantity: data.quantity,
                 price: product.price,
                 name_fr: product.name_fr,
                 name_ar: product.name_ar,
             }],
-            notes: data.notes
         };
 
-        const { error } = await supabase.from('orders').insert([orderData]);
-
-        if (error) {
-            console.error(error);
-            alert('Error submitting order');
-        } else {
+        try {
+            await createOrder(orderData);
             setSuccess(true);
             trackLead(orderData);
+        } catch (error) {
+            console.error(error);
+            alert('Error submitting order');
+        } finally {
+            setSubmitting(false);
         }
-        setSubmitting(false);
     };
 
-    if (loading) return <div className="p-12 text-center">Loading...</div>;
-    if (!product) return <div className="p-12 text-center">Product not found</div>;
+    if (product === undefined) return <div className="p-12 text-center">Loading...</div>;
+    if (product === null) return <div className="p-12 text-center">Product not found</div>;
 
     if (success) {
         return (
@@ -146,25 +135,22 @@ export function Checkout() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <div>
-                                <label className="label text-secondary-700 font-medium mb-2 block">{t('checkout.form.wilaya')}</label>
-                                <select {...register('wilaya')} className="input w-full px-4 py-3 rounded-xl border-secondary-200 focus:border-primary-500 focus:ring-primary-500 bg-secondary-50/50">
-                                    <option value="">Sélectionner Wilaya</option>
-                                    {wilayas.map(w => (
-                                        <option key={w.code} value={w.code}>
-                                            {w.code} - {language === 'ar' ? w.name_ar : w.name_fr}
-                                        </option>
-                                    ))}
-                                </select>
-                                {errors.wilaya && <span className="text-xs text-red-500 mt-1 block">{errors.wilaya.message}</span>}
-                            </div>
-                            <div>
-                                <label className="label text-secondary-700 font-medium mb-2 block">{t('checkout.form.commune')}</label>
-                                <input {...register('commune')} className="input w-full px-4 py-3 rounded-xl border-secondary-200 focus:border-primary-500 focus:ring-primary-500 bg-secondary-50/50" placeholder="Commune" />
-                                {errors.commune && <span className="text-xs text-red-500 mt-1 block">{errors.commune.message}</span>}
-                            </div>
-                        </div>
+                        {/* Location Selector - NEW 69 Wilayas Support */}
+                        <LocationSelector
+                            defaultWilaya={watch('wilaya')}
+                            defaultCommune={watch('commune')}
+                            onSelect={(location) => {
+                                // Extract wilaya code from "code - name" format
+                                const wilayaCode = location.wilaya.split(' - ')[0];
+                                setValue('wilaya', wilayaCode);
+                                setValue('commune', location.commune);
+                            }}
+                        />
+                        {(errors.wilaya || errors.commune) && (
+                            <span className="text-xs text-red-500 mt-1 block">
+                                {errors.wilaya?.message || errors.commune?.message}
+                            </span>
+                        )}
 
                         <div>
                             <label className="label text-secondary-700 font-medium mb-2 block">{t('checkout.form.address')}</label>

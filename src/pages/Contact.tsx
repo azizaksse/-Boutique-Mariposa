@@ -1,15 +1,17 @@
 import { useForm } from 'react-hook-form';
 import { MapPin, Phone, Mail, Instagram, Facebook } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
-import { supabase } from '../lib/supabase';
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { cn } from '../lib/utils';
 
 export function Contact() {
     const { t, language } = useI18n();
     const { register, handleSubmit, reset } = useForm();
+    const sendMessage = useMutation(api.messages.send);
 
     const onSubmit = async (data: any) => {
-        await supabase.from('messages').insert([data]);
+        await sendMessage(data);
         alert('Message sent!');
         reset();
     };

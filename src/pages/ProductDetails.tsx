@@ -5,12 +5,16 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useI18n } from '../lib/i18n';
-import { supabase } from '../lib/supabase';
+//  // REMOVED
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 // import { PRODUCTS } from '../data/mockData';
-import { Product } from '../types';
+
 import { wilayas } from '../lib/wilayas';
+import { getCitiesByWilaya } from '../lib/communes';
 import { cn, formatPrice } from '../lib/utils';
 import { trackViewContent, trackLead } from '../lib/pixel';
+import { Id } from "../../convex/_generated/dataModel";
 
 const schema = z.object({
     fullName: z.string().min(3, 'Name is too short'),
@@ -26,10 +30,18 @@ type FormData = z.infer<typeof schema>;
 
 export function ProductDetails() {
     const { id } = useParams();
+    // Validate ID format for Convex
+    const productId = id as Id<"products">;
+
     const { t, language } = useI18n();
-    const [product, setProduct] = useState<Product | null>(null);
+
+    // Fetch product using Convex
+    const product = useQuery(api.products.get, { id: productId });
+
+    // Mutation to create order
+    const createOrder = useMutation(api.orders.create);
+
     const [selectedImage, setSelectedImage] = useState(0);
-    const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
 
@@ -46,6 +58,8 @@ export function ProductDetails() {
     const quantity = watch('quantity');
 
     const selectedWilaya = wilayas.find(w => w.code === selectedWilayaCode);
+    const communes = selectedWilayaCode ? getCitiesByWilaya(selectedWilayaCode) : [];
+
     const deliveryFee = selectedWilaya
         ? (deliveryMethod === 'home' ? selectedWilaya.home_fee : selectedWilaya.stopdesk_fee)
         : 0;
@@ -53,18 +67,10 @@ export function ProductDetails() {
     const total = product ? (product.price * quantity) + deliveryFee : 0;
 
     useEffect(() => {
-        if (!id) return;
-
-        async function loadProduct() {
-            const { data } = await supabase.from('products').select('*').eq('id', id).single();
-            if (data) {
-                setProduct(data);
-                trackViewContent(data);
-            }
-            setLoading(false);
+        if (product) {
+            trackViewContent(product);
         }
-        loadProduct();
-    }, [id]);
+    }, [product]);
 
     useEffect(() => {
         if (!product?.images?.length) return;
@@ -89,7 +95,7 @@ export function ProductDetails() {
             total: total,
             status: 'new',
             items: [{
-                product_id: product.id,
+                product_id: product._id,
                 quantity: data.quantity,
                 price: product.price,
                 name_fr: product.name_fr,
@@ -97,39 +103,22 @@ export function ProductDetails() {
             }],
         };
 
-        const { error } = await supabase.from('orders').insert([orderData]);
-
-        if (error) {
-            console.error(error);
-            alert('Error submitting order');
-            setSubmitting(false);
-        } else {
+        try {
+            await createOrder(orderData);
             setSuccess(true);
             trackLead(orderData);
             setSubmitting(false);
 
-            // Format WhatsApp Message
-            const msg = `*New Order!* 🛍️%0A%0A` +
-                `*Product:* ${language === 'ar' ? product.name_ar : product.name_fr}%0A` +
-                `*Price:* ${formatPrice(product.price)}%0A` +
-                `*Quantity:* ${data.quantity}%0A` +
-                `*Total:* ${formatPrice(total)}%0A` +
-                `------------------%0A` +
-                `*Name:* ${data.fullName}%0A` +
-                `*Phone:* ${data.phone}%0A` +
-                `*Address:* ${data.address}%0A` +
-                `*City:* ${data.commune}, ${selectedWilaya?.name_fr || data.wilaya}%0A` +
-                `*Delivery:* ${data.deliveryMethod === 'home' ? 'Domicile' : 'Stopdesk'}`;
-
-            // Redirect to WhatsApp
-            window.open(`https://wa.me/213658688543?text=${msg}`, '_blank');
+            // Removed WhatsApp redirection
+        } catch (error) {
+            console.error(error);
+            alert('Error submitting order');
+            setSubmitting(false);
         }
     };
 
-    if (loading) return <div className="p-12 text-center">Loading...</div>;
-    if (!product) return <div className="p-12 text-center">Product not found</div>;
-
-
+    if (product === undefined) return <div className="p-12 text-center">Loading...</div>;
+    if (product === null) return <div className="p-12 text-center">Product not found</div>;
 
     return (
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 pt-24" >
@@ -162,7 +151,7 @@ export function ProductDetails() {
                         )}
                     </div>
                     <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
-                        {product.images?.map((img, idx) => (
+                        {product.images?.map((img: string, idx: number) => (
                             <button
                                 key={idx}
                                 onClick={() => setSelectedImage(idx)}
@@ -251,7 +240,14 @@ export function ProductDetails() {
                                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-secondary-400">
                                                 <Building className="h-5 w-5" />
                                             </div>
-                                            <input {...register('commune')} className="input pl-10" placeholder={t('checkout.form.commune')} />
+                                            <select {...register('commune')} className="input pl-10 appearance-none">
+                                                <option value="">{t('checkout.form.commune')}</option>
+                                                {communes.map(c => (
+                                                    <option key={c.id} value={c.commune_name_ascii}>
+                                                        {language === 'ar' ? c.commune_name : c.commune_name_ascii}
+                                                    </option>
+                                                ))}
+                                            </select>
                                         </div>
                                     </div>
                                     {(errors.wilaya || errors.commune) && <span className="text-xs text-red-500 block mt-1">Location required</span>}
@@ -298,9 +294,9 @@ export function ProductDetails() {
                                         </div>
                                     </div>
 
-                                    <button type="submit" disabled={submitting} className="btn btn-primary w-full py-4 text-lg shadow-lg shadow-primary-500/20 hover:shadow-primary-500/40 transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#128C7E] border-none">
-                                        <MessageCircle className="h-6 w-6" />
-                                        {submitting ? 'Traitement...' : t('product.order_whatsapp')}
+                                    <button type="submit" disabled={submitting} className="btn btn-primary w-full py-4 text-lg shadow-lg shadow-primary-500/20 hover:shadow-primary-500/40 transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-3">
+                                        <ShoppingBag className="h-6 w-6" />
+                                        {submitting ? 'Traitement...' : t('product.order_now')}
                                     </button>
                                 </form>
                             </div>

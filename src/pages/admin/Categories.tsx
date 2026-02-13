@@ -1,35 +1,43 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Plus, Edit, Trash, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { supabase } from '../../lib/supabase';
-import { Category } from '../../types';
-import { ImageUpload } from '../../components/ui/ImageUpload';
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Id } from "../../../convex/_generated/dataModel";
+import { ConvexImageUpload } from '../../components/ui/ConvexImageUpload';
 
 export function Categories() {
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [loading, setLoading] = useState(true);
+    // Defines a local interface for Category to match what the component expects
+    // In a real app, this should be imported from a shared types file or generated types
+    interface Category {
+        _id: Id<"categories">;
+        _creationTime: number;
+        name_fr: string;
+        name_ar: string;
+        slug: string;
+        image?: string;
+    }
+
+    const categories = useQuery(api.categories.list);
+    const createCategory = useMutation(api.categories.create);
+    const updateCategory = useMutation(api.categories.update);
+    const removeCategory = useMutation(api.categories.remove);
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
     const { register, handleSubmit, reset, setValue } = useForm();
+    const [image, setImage] = useState<string | null>(null);
 
-    useEffect(() => {
-        fetchData();
-    }, []);
-
-    async function fetchData() {
-        const { data } = await supabase.from('categories').select('*');
-        if (data) setCategories(data);
-        setLoading(false);
-    }
-
-    const openModal = (category?: Category) => {
+    const openModal = (category?: any) => {
         if (category) {
             setEditingCategory(category);
             setValue('name_fr', category.name_fr);
             setValue('name_ar', category.name_ar);
+            setImage(category.image || null);
         } else {
-            setEditingCategory({ image: '' } as any);
+            setEditingCategory(null);
+            setImage(null);
             reset();
         }
         setIsModalOpen(true);
@@ -37,29 +45,28 @@ export function Categories() {
 
     const onSubmit = async (data: any) => {
         const categoryData = {
-            ...data,
+            name_fr: data.name_fr,
+            name_ar: data.name_ar,
             slug: data.name_fr.toLowerCase().replace(/ /g, '-'),
-            image: editingCategory?.image || null,
+            image: image || undefined,
         };
 
-        if (editingCategory?.id) {
-            await supabase.from('categories').update(categoryData).eq('id', editingCategory.id);
+        if (editingCategory) {
+            await updateCategory({ id: editingCategory._id, ...categoryData });
         } else {
-            await supabase.from('categories').insert([categoryData]);
+            await createCategory(categoryData);
         }
 
         setIsModalOpen(false);
-        fetchData();
     };
 
-    const deleteCategory = async (id: string) => {
+    const deleteCategory = async (id: Id<"categories">) => {
         if (confirm('Are you sure?')) {
-            await supabase.from('categories').delete().eq('id', id);
-            fetchData();
+            await removeCategory({ id });
         }
     };
 
-    if (loading) return <div>Loading...</div>;
+    if (categories === undefined) return <div>Loading...</div>;
 
     return (
         <div>
@@ -74,7 +81,7 @@ export function Categories() {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {categories.map((category) => (
-                    <div key={category.id} className="bg-white p-4 rounded-xl shadow-sm border border-secondary-100 flex justify-between items-center">
+                    <div key={category._id} className="bg-white p-4 rounded-xl shadow-sm border border-secondary-100 flex justify-between items-center">
                         <div>
                             <h3 className="font-medium">{category.name_fr}</h3>
                             <p className="text-sm text-secondary-500">{category.name_ar}</p>
@@ -83,7 +90,7 @@ export function Categories() {
                             <button onClick={() => openModal(category)} className="p-2 text-secondary-600 hover:bg-secondary-50 rounded-full">
                                 <Edit className="h-5 w-5" />
                             </button>
-                            <button onClick={() => deleteCategory(category.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-full">
+                            <button onClick={() => deleteCategory(category._id)} className="p-2 text-red-600 hover:bg-red-50 rounded-full">
                                 <Trash className="h-5 w-5" />
                             </button>
                         </div>
@@ -111,12 +118,9 @@ export function Categories() {
 
                             <div>
                                 <label className="label">Image</label>
-                                <ImageUpload
-                                    value={editingCategory?.image ? [editingCategory.image] : []}
-                                    onChange={(urls) => {
-                                        setEditingCategory(prev => prev ? { ...prev, image: urls[0] } : { ...{} as Category, image: urls[0] });
-                                    }}
-                                    bucket="categories"
+                                <ConvexImageUpload
+                                    value={image ? [image] : []}
+                                    onChange={(urls) => setImage(urls[0] || null)}
                                 />
                             </div>
                             <button type="submit" className="btn btn-primary w-full">Save Category</button>

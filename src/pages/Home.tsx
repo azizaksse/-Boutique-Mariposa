@@ -1,31 +1,29 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Truck, ShieldCheck, Phone } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
-import { supabase } from '../lib/supabase';
-import { Product, Category } from '../types';
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { cn, formatPrice } from '../lib/utils';
 
 export function Home() {
     const { t, language } = useI18n();
-    const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [loading, setLoading] = useState(true);
     const videoRef = useRef<HTMLVideoElement>(null);
 
-    useEffect(() => {
-        async function loadData() {
-            const [prodRes, catRes] = await Promise.all([
-                supabase.from('products').select('*').eq('featured', true).limit(4),
-                supabase.from('categories').select('*').limit(4)
-            ]);
+    const featuredProducts = useQuery(api.products.list) || [];
+    // Filter featured client-side or add a specific query in Convex
+    const featured = featuredProducts.filter(p => p.featured).slice(0, 4);
 
-            if (prodRes.data) setFeaturedProducts(prodRes.data);
-            if (catRes.data) setCategories(catRes.data);
-            setLoading(false);
+    const categories = useQuery(api.categories.list) || [];
+    const featuredCategories = categories.slice(0, 4);
+
+    const loading = featuredProducts === undefined || categories === undefined;
+
+    useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.playbackRate = 1.5;
         }
-        loadData();
-    }, []);
+    }, [loading]);
 
     useEffect(() => {
         if (videoRef.current) {
@@ -119,14 +117,14 @@ export function Home() {
             </section>
 
             {/* Featured Categories */}
-            {categories.length > 0 && (
+            {featuredCategories.length > 0 && (
                 <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full">
                     <h2 className={cn("text-2xl font-bold text-secondary-900 mb-8 text-center", language === 'ar' && "font-arabic")}>
                         {t('categories.title')}
                     </h2>
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                        {categories.map((cat) => (
-                            <Link key={cat.id} to={`/categories?cat=${cat.id}`} className="group relative overflow-hidden rounded-2xl aspect-square bg-secondary-100">
+                        {featuredCategories.map((cat) => (
+                            <Link key={cat._id} to={`/categories?cat=${cat._id}`} className="group relative overflow-hidden rounded-2xl aspect-square bg-secondary-100">
                                 {cat.image ? (
                                     <img src={cat.image} alt={language === 'ar' ? cat.name_ar : cat.name_fr} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
                                 ) : (
@@ -144,14 +142,14 @@ export function Home() {
             )}
 
             {/* Featured Products */}
-            {featuredProducts.length > 0 && (
+            {featured.length > 0 && (
                 <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full">
                     <h2 className={cn("text-2xl font-bold text-secondary-900 mb-8 text-center", language === 'ar' && "font-arabic")}>
                         {t('featured.title')}
                     </h2>
                     <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-                        {featuredProducts.map((product) => (
-                            <Link key={product.id} to={`/product/${product.id}`} className="card group shadow-lg hover:shadow-xl transition-all duration-300">
+                        {featured.map((product) => (
+                            <Link key={product._id} to={`/product/${product._id}`} className="card group shadow-lg hover:shadow-xl transition-all duration-300">
                                 <div className="aspect-[4/5] overflow-hidden bg-secondary-100 relative">
                                     {product.images?.[0] && (
                                         <img src={product.images[0]} alt={language === 'ar' ? product.name_ar : product.name_fr} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />

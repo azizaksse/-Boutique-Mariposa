@@ -1,44 +1,40 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Plus, Edit, Trash, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { supabase } from '../../lib/supabase';
-import { Product, Category } from '../../types';
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Id } from "../../../convex/_generated/dataModel";
 import { formatPrice } from '../../lib/utils';
-import { ImageUpload } from '../../components/ui/ImageUpload';
+import { ConvexImageUpload } from '../../components/ui/ConvexImageUpload';
 
 export function Products() {
-    const [products, setProducts] = useState<Product[]>([]);
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [loading, setLoading] = useState(true);
+    const products = useQuery(api.products.list);
+    const createProduct = useMutation(api.products.create);
+    const updateProduct = useMutation(api.products.update);
+    const removeProduct = useMutation(api.products.remove);
+
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+    const [editingProduct, setEditingProduct] = useState<any | null>(null);
     const [mainImage, setMainImage] = useState<string | null>(null);
     const [galleryImages, setGalleryImages] = useState<string[]>([]);
 
     const { register, handleSubmit, reset, setValue } = useForm();
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+    const categories = [
+        { id: 'coffrets-cadeaux', name_fr: 'Coffrets Cadeaux' },
+        { id: 'montres-accessoires', name_fr: 'Montres & Accessoires' },
+        { id: 'parfums', name_fr: 'Parfums' },
+    ];
 
-    async function fetchData() {
-        const [prodRes, catRes] = await Promise.all([
-            supabase.from('products').select('*').order('created_at', { ascending: false }),
-            supabase.from('categories').select('*')
-        ]);
+    if (products === undefined) return <div>Loading...</div>;
 
-        if (prodRes.data) setProducts(prodRes.data);
-        if (catRes.data) setCategories(catRes.data);
-        setLoading(false);
-    }
-
-    const openModal = (product?: Product) => {
+    const openModal = (product?: any) => {
         if (product) {
             setEditingProduct(product);
             setValue('name', product.name_fr);
             setValue('price', product.price);
             setValue('old_price', product.old_price);
-            setValue('category_id', product.category_id);
+            setValue('category_id', product.category);
             setMainImage(product.images?.[0] || null);
             setGalleryImages(product.images?.slice(1) || []);
             setValue('featured', product.featured);
@@ -55,46 +51,48 @@ export function Products() {
         const name = String(data.name || '').trim();
         const price = data.price === '' || data.price == null ? null : Number(data.price);
         const oldPrice = data.old_price === '' || data.old_price == null ? null : Number(data.old_price);
-        const images = [mainImage, ...galleryImages].filter(Boolean) as string[];
+
+        const images = [mainImage, ...galleryImages].filter((img): img is string => typeof img === 'string' && img.length > 0);
+
         const productData = {
             name_fr: name,
             name_ar: name,
-            category_id: data.category_id,
-            slug: name.toLowerCase().replace(/\s+/g, '-'),
-            price,
-            old_price: oldPrice,
+            category: data.category_id,
+            price: price || 0,
+            old_price: oldPrice || undefined,
             images,
+            stock: 10,
+            active: true,
             featured: !!data.featured
         };
 
-        const response = editingProduct?.id
-            ? await supabase.from('products').update(productData).eq('id', editingProduct.id)
-            : await supabase.from('products').insert([productData]);
-
-        if (response.error) {
-            console.error(response.error);
-            alert(response.error.message || 'Failed to save product.');
-            return;
-        }
-
-        setIsModalOpen(false);
-        setEditingProduct(null);
-        fetchData();
-    };
-
-    const deleteProduct = async (id: string) => {
-        if (confirm('Are you sure?')) {
-            const { error } = await supabase.from('products').delete().eq('id', id);
-            if (error) {
-                console.error(error);
-                alert(error.message || 'Failed to delete product.');
-                return;
+        try {
+            if (editingProduct?._id) {
+                await updateProduct({
+                    id: editingProduct._id,
+                    ...productData
+                });
+            } else {
+                await createProduct(productData);
             }
-            fetchData();
+            setIsModalOpen(false);
+            setEditingProduct(null);
+        } catch (error) {
+            console.error(error);
+            alert('Failed to save product');
         }
     };
 
-    if (loading) return <div>Loading...</div>;
+    const deleteProduct = async (id: Id<"products">) => {
+        if (confirm('Are you sure?')) {
+            try {
+                await removeProduct({ id });
+            } catch (error) {
+                console.error(error);
+                alert('Failed to delete product');
+            }
+        }
+    };
 
     return (
         <div>
@@ -109,7 +107,7 @@ export function Products() {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {products.map((product) => (
-                    <div key={product.id} className="bg-white p-4 rounded-xl shadow-sm border border-secondary-100 flex flex-col">
+                    <div key={product._id} className="bg-white p-4 rounded-xl shadow-sm border border-secondary-100 flex flex-col">
                         <div className="aspect-video bg-secondary-100 rounded-lg mb-4 overflow-hidden">
                             {product.images?.[0] && <img src={product.images[0]} className="h-full w-full object-cover" />}
                         </div>
@@ -119,7 +117,7 @@ export function Products() {
                             <button onClick={() => openModal(product)} className="p-2 text-secondary-600 hover:bg-secondary-50 rounded-full">
                                 <Edit className="h-5 w-5" />
                             </button>
-                            <button onClick={() => deleteProduct(product.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-full">
+                            <button onClick={() => deleteProduct(product._id)} className="p-2 text-red-600 hover:bg-red-50 rounded-full">
                                 <Trash className="h-5 w-5" />
                             </button>
                         </div>
@@ -163,19 +161,17 @@ export function Products() {
 
                             <div>
                                 <label className="label">Principal Image</label>
-                                <ImageUpload
+                                <ConvexImageUpload
                                     value={mainImage ? [mainImage] : []}
                                     onChange={(urls) => setMainImage(urls[0] || null)}
-                                    bucket="products"
                                 />
                             </div>
 
                             <div>
                                 <label className="label">Gallery Images</label>
-                                <ImageUpload
+                                <ConvexImageUpload
                                     value={galleryImages}
                                     onChange={setGalleryImages}
-                                    bucket="products"
                                     multiple
                                 />
                             </div>
