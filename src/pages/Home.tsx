@@ -65,7 +65,7 @@ export function Home() {
                         <div className="max-w-4xl">
                             <div className="inline-flex items-center rounded-full border border-white/30 bg-white/10 px-4 py-1.5 text-sm font-medium text-white mb-8 backdrop-blur-md animate-fade-in">
                                 <span className="flex h-2 w-2 rounded-full bg-gold-400 mr-2 animate-pulse"></span>
-                                Nouvelle Collection 2025
+                                Nouvelle Collection 2026
                             </div>
 
                             <h1 className={cn("text-5xl font-extrabold tracking-tight text-white sm:text-7xl mb-8 drop-shadow-lg", language === 'ar' && "font-arabic")}>
@@ -106,7 +106,7 @@ export function Home() {
                         <h3 className="font-bold text-lg text-secondary-900 mb-2">Paiement à la livraison</h3>
                         <p className="text-secondary-500">Commandez en toute confiance</p>
                     </div>
-                    <a href="https://wa.me/213658688543" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center text-center p-8 bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg shadow-secondary-200/50 border border-white/50 transition-transform hover:-translate-y-1 duration-300 cursor-pointer">
+                    <a href="https://wa.me/213542511554" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center text-center p-8 bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg shadow-secondary-200/50 border border-white/50 transition-transform hover:-translate-y-1 duration-300 cursor-pointer">
                         <div className="h-14 w-14 bg-primary-50 rounded-2xl flex items-center justify-center mb-5 text-primary-600 shadow-inner">
                             <Phone className="h-7 w-7" />
                         </div>

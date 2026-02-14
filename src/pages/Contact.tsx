@@ -30,7 +30,7 @@ export function Contact() {
                         </div>
                         <div>
                             <h3 className="font-semibold text-lg">Phone</h3>
-                            <p className="text-secondary-600">+213 658 68 85 43</p>
+                            <p className="text-secondary-600">0542 51 15 54</p>
                         </div>
                     </div>
 

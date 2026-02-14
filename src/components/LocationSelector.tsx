@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Check, ChevronsUpDown } from 'lucide-react';
-import { getWilayas, getCommunes, type Wilaya, type Commune } from '../lib/algeria-locations';
+import { getWilayas, type Wilaya } from '../lib/algeria-locations';
 import { clsx } from 'clsx';
 
 interface LocationSelectorProps {
@@ -17,13 +17,11 @@ export function LocationSelector({
     className,
 }: LocationSelectorProps) {
     const [selectedWilaya, setSelectedWilaya] = useState<Wilaya | null>(null);
-    const [selectedCommune, setSelectedCommune] = useState<string>('');
+    const [communeName, setCommuneName] = useState<string>('');
     const [wilayaSearch, setWilayaSearch] = useState('');
     const [showWilayaDropdown, setShowWilayaDropdown] = useState(false);
-    const [showCommuneDropdown, setShowCommuneDropdown] = useState(false);
 
     const wilayas = getWilayas();
-    const communes = selectedWilaya ? getCommunes(selectedWilaya.id) : [];
 
     // Filter wilayas based on search
     const filteredWilayas = wilayas.filter(wilaya =>
@@ -45,26 +43,33 @@ export function LocationSelector({
     }, [defaultWilaya, wilayas, selectedWilaya]);
 
     useEffect(() => {
-        if (defaultCommune && !selectedCommune) {
-            setSelectedCommune(defaultCommune);
+        if (defaultCommune && !communeName) {
+            setCommuneName(defaultCommune);
         }
-    }, [defaultCommune, selectedCommune]);
+    }, [defaultCommune, communeName]);
 
     const handleWilayaSelect = (wilaya: Wilaya) => {
         setSelectedWilaya(wilaya);
-        setSelectedCommune('');
         setShowWilayaDropdown(false);
         setWilayaSearch('');
+        // We trigger update if commune name is already typed
+        if (communeName) {
+            onSelect({
+                wilaya: `${wilaya.code} - ${wilaya.name_fr}`,
+                commune: communeName,
+                wilaya_id: wilaya.id,
+            });
+        }
     };
 
-    const handleCommuneSelect = (commune: Commune) => {
-        setSelectedCommune(commune.name_fr);
-        setShowCommuneDropdown(false);
+    const handleCommuneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newCommune = e.target.value;
+        setCommuneName(newCommune);
 
         if (selectedWilaya) {
             onSelect({
                 wilaya: `${selectedWilaya.code} - ${selectedWilaya.name_fr}`,
-                commune: commune.name_fr,
+                commune: newCommune,
                 wilaya_id: selectedWilaya.id,
             });
         }
@@ -138,68 +143,31 @@ export function LocationSelector({
                 </div>
             </div>
 
-            {/* Commune Selector */}
-            <div className="relative">
+            {/* Commune Input (Manual) */}
+            <div>
                 <label className="block text-sm font-medium text-secondary-700 mb-1">
                     Commune *
                 </label>
-                <div className="relative">
-                    <button
-                        type="button"
-                        disabled={!selectedWilaya}
-                        onClick={() => setShowCommuneDropdown(!showCommuneDropdown)}
-                        className={clsx(
-                            'w-full px-3 py-2 border rounded-lg text-left flex items-center justify-between',
-                            !selectedWilaya
-                                ? 'bg-secondary-50 border-secondary-200 text-secondary-400 cursor-not-allowed'
-                                : 'bg-white border-secondary-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500'
-                        )}
-                    >
-                        <span className={clsx(
-                            selectedCommune ? 'text-secondary-900' : 'text-secondary-400'
-                        )}>
-                            {selectedCommune || 'Sélectionnez une commune'}
-                        </span>
-                        <ChevronsUpDown className="h-4 w-4 text-secondary-400" />
-                    </button>
-
-                    {showCommuneDropdown && selectedWilaya && (
-                        <div className="absolute z-50 w-full mt-1 bg-white border border-secondary-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                            {communes.length > 0 ? (
-                                communes.map((commune) => (
-                                    <button
-                                        key={commune.id}
-                                        type="button"
-                                        onClick={() => handleCommuneSelect(commune)}
-                                        className={clsx(
-                                            'w-full px-3 py-2 text-left text-sm hover:bg-secondary-50 flex items-center justify-between',
-                                            selectedCommune === commune.name_fr && 'bg-primary-50 text-primary-700'
-                                        )}
-                                    >
-                                        <span>{commune.name_fr}</span>
-                                        {selectedCommune === commune.name_fr && (
-                                            <Check className="h-4 w-4 text-primary-600" />
-                                        )}
-                                    </button>
-                                ))
-                            ) : (
-                                <div className="px-3 py-4 text-sm text-secondary-400 text-center">
-                                    Aucune commune disponible
-                                </div>
-                            )}
-                        </div>
+                <input
+                    type="text"
+                    value={communeName}
+                    onChange={handleCommuneChange}
+                    placeholder="Écrivez le nom de votre commune..."
+                    className={clsx(
+                        'w-full px-3 py-2 border rounded-lg',
+                        !selectedWilaya
+                            ? 'bg-secondary-50 border-secondary-200 text-secondary-400 cursor-not-allowed'
+                            : 'bg-white border-secondary-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500'
                     )}
-                </div>
+                    disabled={!selectedWilaya}
+                />
             </div>
 
             {/* Click outside to close dropdowns */}
-            {(showWilayaDropdown || showCommuneDropdown) && (
+            {showWilayaDropdown && (
                 <div
                     className="fixed inset-0 z-40"
-                    onClick={() => {
-                        setShowWilayaDropdown(false);
-                        setShowCommuneDropdown(false);
-                    }}
+                    onClick={() => setShowWilayaDropdown(false)}
                 />
             )}
         </div>

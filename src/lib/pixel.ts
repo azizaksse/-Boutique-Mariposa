@@ -1,5 +1,5 @@
 // @ts-nocheck
-export const PIXEL_ID = import.meta.env.VITE_FB_PIXEL_ID;
+export const PIXEL_ID = import.meta.env.VITE_FACEBOOK_PIXEL_ID;
 
 export function initPixel() {
     if (!PIXEL_ID) return;

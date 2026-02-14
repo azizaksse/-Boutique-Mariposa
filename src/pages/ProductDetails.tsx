@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MessageCircle, ShoppingBag, ChevronLeft, CheckCircle, User, Phone, MapPin, Building, Navigation, Truck } from 'lucide-react';
+import { ShoppingBag, ChevronLeft, CheckCircle, User, Phone, MapPin, Building, Navigation, Truck } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,7 +11,7 @@ import { api } from "../../convex/_generated/api";
 // import { PRODUCTS } from '../data/mockData';
 
 import { wilayas } from '../lib/wilayas';
-import { getCitiesByWilaya } from '../lib/communes';
+// import { getCitiesByWilaya } from '../lib/communes';
 import { cn, formatPrice } from '../lib/utils';
 import { trackViewContent, trackLead } from '../lib/pixel';
 import { Id } from "../../convex/_generated/dataModel";
@@ -58,7 +58,7 @@ export function ProductDetails() {
     const quantity = watch('quantity');
 
     const selectedWilaya = wilayas.find(w => w.code === selectedWilayaCode);
-    const communes = selectedWilayaCode ? getCitiesByWilaya(selectedWilayaCode) : [];
+    // const communes = selectedWilayaCode ? getCitiesByWilaya(selectedWilayaCode) : [];
 
     const deliveryFee = selectedWilaya
         ? (deliveryMethod === 'home' ? selectedWilaya.home_fee : selectedWilaya.stopdesk_fee)
@@ -240,14 +240,11 @@ export function ProductDetails() {
                                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-secondary-400">
                                                 <Building className="h-5 w-5" />
                                             </div>
-                                            <select {...register('commune')} className="input pl-10 appearance-none">
-                                                <option value="">{t('checkout.form.commune')}</option>
-                                                {communes.map(c => (
-                                                    <option key={c.id} value={c.commune_name_ascii}>
-                                                        {language === 'ar' ? c.commune_name : c.commune_name_ascii}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                            <input
+                                                {...register('commune')}
+                                                className="input pl-10"
+                                                placeholder="Commune / Baladiya"
+                                            />
                                         </div>
                                     </div>
                                     {(errors.wilaya || errors.commune) && <span className="text-xs text-red-500 block mt-1">Location required</span>}

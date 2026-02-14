@@ -57,14 +57,14 @@ export function Footer() {
                         <ul className="space-y-4">
                             <li>
                                 <a
-                                    href="https://wa.me/213658688543"
+                                    href="https://wa.me/213542511554"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="group relative inline-flex items-center gap-2 px-6 py-3 rounded-full bg-green-600 text-white font-bold overflow-hidden transition-all duration-300 hover:bg-green-700 hover:scale-105 shadow-lg shadow-green-600/30"
                                 >
                                     <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent z-10"></div>
                                     <Phone className="h-5 w-5 animate-pulse" />
-                                    <span dir="ltr" className="relative z-20 text-lg tracking-wide">0658 68 85 43</span>
+                                    <span dir="ltr" className="relative z-20 text-lg tracking-wide">0542 51 15 54</span>
                                 </a>
                             </li>
                             <li className="flex items-center gap-2 text-sm text-secondary-600">

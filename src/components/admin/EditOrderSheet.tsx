@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
-import { Id } from '../../../convex/_generated/dataModel';
+// import { Id } from '../../../convex/_generated/dataModel';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -45,7 +45,6 @@ export function EditOrderSheet({
         register,
         handleSubmit,
         formState: { errors, isSubmitting },
-        reset,
     } = useForm<OrderFormData>({
         resolver: zodResolver(orderFormSchema),
         values: order ? {
